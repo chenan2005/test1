@@ -75,13 +75,19 @@ package com.iod.network
 		{
 			return this.state;
 		}
-
+		
+		public function get socket():Socket
+		{
+			return this.sd;
+		}
 		
 		private function onConnected(event:Event) : void
 		{
 			Netlog.log("target " + ip + ":" + port + " connected");
 			sd.addEventListener(Event.CLOSE, onClosed);
 			sd.addEventListener(ProgressEvent.SOCKET_DATA, onSocketData);
+			sd.removeEventListener(IOErrorEvent.IO_ERROR, onConnectError);
+			sd.addEventListener(IOErrorEvent.IO_ERROR, onSocketDataError);
 			setConnState(CONN_STATE_CONNECTED);
 			if (bindSession)
 				bindSession.onConnected();
@@ -136,12 +142,17 @@ package com.iod.network
 		{
 			if (!bindSession)
 				return;
-			
 			sd.readBytes(readBuffer);
 			var packet : Packet = new Packet;
 			while (packet.read(readBuffer) > 0) {
 				bindSession.onPacket(packet);
 			}
+		}
+		
+		private function onSocketDataError(event:IOErrorEvent):void
+		{
+			Netlog.log("target " + ip + ":" + port + " io error : " + event.toString());
+			close();
 		}
 	}
 }

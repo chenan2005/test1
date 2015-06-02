@@ -8,17 +8,21 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.iod.network.Connection;
 			import com.iod.network.Netlog;
-			import com.iod.pb.common.base_msg;
-			import com.iod.pb.test._REQ_AUTHENTICATION;
-			import com.iod.pb.test.req_authentication;
+			import com.iod.pb.common.BaseMsg;
+			import com.iod.pb.test.IDREQAUTHENTICATION;
+			import com.iod.pb.test.ReqAuthentication;
+			import com.test.TestClientSession;
+			
+			import flash.events.Event;
 			
 			import mx.events.FlexEvent;
-			import flash.events.Event;
 				
 			[Bindable]
 			private var report:String = "";
+			
+			private var sessions:Array = [];
+			private static const TEST_SESSION_COUNT :int = 1;
 			
 			protected function btnTestRw_clickHandler(event:MouseEvent):void
 			{
@@ -26,15 +30,15 @@
 				
 				_report("write msg...");
 				
-				var test_msg : base_msg = new base_msg;
-				var req : req_authentication = new req_authentication;
-				test_msg.messgeId = _REQ_AUTHENTICATION.tagNumber;
+				var test_msg : BaseMsg = new BaseMsg;
+				var req : ReqAuthentication = new ReqAuthentication;
+				test_msg.messageId = IDREQAUTHENTICATION.tagNumber;
 				test_msg.from = 0;
 				test_msg.__to = 0;
 				test_msg.flags = 0;
-				req.userid = "chenan";
+				req.userId = "chenan";
 				req.authentication = "chenan";
-				test_msg[_REQ_AUTHENTICATION] = req;
+				test_msg[IDREQAUTHENTICATION] = req;
 				
 				_report("create message: " + test_msg.toString());
 				
@@ -43,11 +47,11 @@
 				
 				test_msg.writeTo(msg_data);
 				
-				_report("write msg done, data length " + test_msg.length);
+				_report("write msg done, data length " + msg_data.length);
 				
 				msg_data.position = 0;
 				
-				test_msg = new base_msg;
+				test_msg = new BaseMsg;
 				test_msg.mergeFrom(msg_data);
 				
 				_report("read message: " + test_msg.toString());
@@ -56,7 +60,14 @@
 			
 			protected function btnTestConnection_clickHandler(event:MouseEvent):void
 			{
-				var c :Connection = new Connection("127.0.0.1", 12345, 0);
+				//var session:Session = new Session();
+				//session.connect("127.0.0.1", 12345);
+				for (var i : int = 0; i < TEST_SESSION_COUNT; i++) {
+					var session:TestClientSession = new TestClientSession;
+					session.connect("127.0.0.1", 12345);
+					sessions.push(session);
+				}
+				
 			}
 			
 			protected function _report(info:String):void
@@ -76,9 +87,22 @@
 			
 			protected function onEnterframe(event:Event):void
 			{
+				fetchNetLog();
+				for (var i : int = 0; i < sessions.length; i++) {
+					var session:TestClientSession = sessions[i];
+					if (session.connected) {
+						var byteArray:ByteArray = new ByteArray;
+						byteArray.writeUTF("adfadsfdsafd");
+						session.sendTestMsg1(byteArray);
+					}
+				}
+			}
+			
+			private function fetchNetLog():void
+			{
 				var s:String = Netlog.fetch();
 				if (s)
-					_report(s);
+					_report(s);		
 			}
 			
 			protected function btnTest_clickHandler(event:MouseEvent):void
