@@ -4,6 +4,8 @@ package com.iod.network
 	import com.iod.network.Packet;
 	import com.iod.network.Session;
 	
+	import flash.errors.EOFError;
+	import flash.errors.IOError;
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
 	import flash.events.ProgressEvent;
@@ -18,6 +20,9 @@ package com.iod.network
 		public static const CONN_STATE_NONE : Number = 0;
 		public static const CONN_STATE_CONNECTING : Number  = 1;
 		public static const CONN_STATE_CONNECTED : Number  = 2;
+		
+		public static const MAX_BUFFER_LENGTH : Number = 1048576;
+		public static const RESET_BUFFER_BOUNDARY : Number = 1024;
 		
 		private var sd:Socket; 
 		private var ip:String;
@@ -35,6 +40,7 @@ package com.iod.network
 			this.ip = ip;
 			this.port = port;
 			this.timeoutTime = timeoutTime;
+			this.readBuffer = new ByteArray;
 			
 			reconnect();
 		}
@@ -142,10 +148,37 @@ package com.iod.network
 		{
 			if (!bindSession)
 				return;
-			sd.readBytes(readBuffer);
+			
+			//当读取缓冲区小于MAX_BUFFER_LENGTH时，才读取数据
+			if (readBuffer.length < MAX_BUFFER_LENGTH) {
+				try {
+					sd.readBytes(readBuffer, readBuffer.length);
+				}
+				catch (error:EOFError) {
+					Netlog.log(error.message);
+					close();
+				}
+				catch (error:IOError) {
+					Netlog.log(error.message);
+					close();
+				}
+			}
+			
+			//读取网络包
 			var packet : Packet = new Packet;
 			while (packet.read(readBuffer) > 0) {
 				bindSession.onPacket(packet);
+			}
+			
+			//如果读取位置在最后，直接清空缓冲区
+			if (readBuffer.position == readBuffer.length) {
+				readBuffer.clear();
+			}
+			//否则将剩余数据复制到新的缓冲区中
+			else if (readBuffer.position > RESET_BUFFER_BOUNDARY) {
+				var tempBuffer:ByteArray = new ByteArray;
+				tempBuffer.writeBytes(readBuffer, readBuffer.position);
+				readBuffer = tempBuffer;
 			}
 		}
 		

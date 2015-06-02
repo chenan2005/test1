@@ -15,6 +15,7 @@
 			import com.test.TestClientSession;
 			
 			import flash.events.Event;
+			import flash.utils.getTimer;
 			
 			import mx.events.FlexEvent;
 				
@@ -87,15 +88,7 @@
 			
 			protected function onEnterframe(event:Event):void
 			{
-				fetchNetLog();
-				for (var i : int = 0; i < sessions.length; i++) {
-					var session:TestClientSession = sessions[i];
-					if (session.connected) {
-						var byteArray:ByteArray = new ByteArray;
-						byteArray.writeUTF("adfadsfdsafd");
-						session.sendTestMsg1(byteArray);
-					}
-				}
+				fetchNetLog();				
 			}
 			
 			private function fetchNetLog():void
@@ -107,7 +100,21 @@
 			
 			protected function btnTest_clickHandler(event:MouseEvent):void
 			{
-			}			
+
+			}
+			
+			protected function btnSendTest_clickHandler(event:MouseEvent):void
+			{
+				for (var i : int = 0; i < sessions.length; i++) {
+					var session:TestClientSession = sessions[i];
+					if (session.connected) {
+						var byteArray:ByteArray = new ByteArray;
+						byteArray.writeUTF("adfadsfdsafd");
+						session.sendTestMsg1(byteArray);
+					}
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	<s:VGroup horizontalAlign="center" width="100%" height="100%" 
@@ -117,6 +124,7 @@
 		
 		<s:Button label="test msg read/write!" id="btnTestRw" click="btnTestRw_clickHandler(event)" />
 		<s:Button label="test connection!" id="btnTestConnection" click="btnTestConnection_clickHandler(event)" />
+		<s:Button label="send test msg" id="btnSendTest" click="btnSendTest_clickHandler(event)" />
 		
 		<s:Button label="test" id="btnTest" click="btnTest_clickHandler(event)" />
 		

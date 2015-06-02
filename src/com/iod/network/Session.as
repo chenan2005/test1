@@ -12,8 +12,16 @@ package com.iod.network
 	{
 		private var connection:Connection;	
 		
+		private var messageHandlers : Array;
+		
 		public function Session()
 		{
+			messageHandlers = new Array;
+		}
+		
+		public function setMesageHandler(id:Number, handleFunction:Function) : void
+		{
+			messageHandlers[id] = handleFunction;
 		}
 		
 		public function connect(ip:String, port:Number) : void
@@ -43,6 +51,13 @@ package com.iod.network
 		{
 			var baseMsg:BaseMsg = new BaseMsg;
 			baseMsg.mergeFrom(packet.data);
+			onBaseMessage(baseMsg);
+		}
+		
+		public function onBaseMessage(baseMsg:BaseMsg):void
+		{
+			if (messageHandlers[baseMsg.messageId] != null)
+				messageHandlers[baseMsg.messageId](baseMsg);
 		}
 		
 		public function sendPacket(packet:Packet):Boolean
