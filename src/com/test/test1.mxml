@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="100%" height="100%"
+			   minWidth="500" minHeight="500" 
+			   initialize="application_initializeHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.iod.network.Connection;
+			import com.iod.network.Netlog;
+			import com.iod.pb.common.base_msg;
+			import com.iod.pb.test._REQ_AUTHENTICATION;
+			import com.iod.pb.test.req_authentication;
+			
+			import mx.events.FlexEvent;
+			import flash.events.Event;
+				
+			[Bindable]
+			private var report:String = "";
+			
+			protected function btnTestRw_clickHandler(event:MouseEvent):void
+			{
+				_report("test start...");	
+				
+				_report("write msg...");
+				
+				var test_msg : base_msg = new base_msg;
+				var req : req_authentication = new req_authentication;
+				test_msg.messgeId = _REQ_AUTHENTICATION.tagNumber;
+				test_msg.from = 0;
+				test_msg.__to = 0;
+				test_msg.flags = 0;
+				req.userid = "chenan";
+				req.authentication = "chenan";
+				test_msg[_REQ_AUTHENTICATION] = req;
+				
+				_report("create message: " + test_msg.toString());
+				
+				var msg_data : ByteArray = new ByteArray;
+				msg_data.endian = flash.utils.Endian.LITTLE_ENDIAN;
+				
+				test_msg.writeTo(msg_data);
+				
+				_report("write msg done, data length " + test_msg.length);
+				
+				msg_data.position = 0;
+				
+				test_msg = new base_msg;
+				test_msg.mergeFrom(msg_data);
+				
+				_report("read message: " + test_msg.toString());
+								
+			}
+			
+			protected function btnTestConnection_clickHandler(event:MouseEvent):void
+			{
+				var c :Connection = new Connection("127.0.0.1", 12345, 0);
+			}
+			
+			protected function _report(info:String):void
+			{
+				report += info;
+				report += "\n";
+				
+				reportText.validateNow();
+				reportText.scroller.verticalScrollBar.value = reportText.scroller.verticalScrollBar.maximum; 
+			}
+			
+			protected function application_initializeHandler(event:FlexEvent):void
+			{
+				lblHeader.text = "Network test sample";
+				this.addEventListener(Event.ENTER_FRAME, onEnterframe);
+			}
+			
+			protected function onEnterframe(event:Event):void
+			{
+				var s:String = Netlog.fetch();
+				if (s)
+					_report(s);
+			}
+			
+			protected function btnTest_clickHandler(event:MouseEvent):void
+			{
+			}			
+		]]>
+	</fx:Script>
+	<s:VGroup horizontalAlign="center" width="100%" height="100%" 
+			  paddingTop="20" gap="10">
+		
+		<s:Label id="lblHeader" fontSize="40" color="0x777777"/>
+		
+		<s:Button label="test msg read/write!" id="btnTestRw" click="btnTestRw_clickHandler(event)" />
+		<s:Button label="test connection!" id="btnTestConnection" click="btnTestConnection_clickHandler(event)" />
+		
+		<s:Button label="test" id="btnTest" click="btnTest_clickHandler(event)" />
+		
+		<s:TextArea id="reportText" text="{report}" editable="false" width="460" height="250" />
+		
+	</s:VGroup>	
+</s:Application>
